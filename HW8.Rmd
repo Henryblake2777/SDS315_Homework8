@@ -1,0 +1,122 @@
+---
+title: "Homework 8 - https://github.com/Henryblake2777/SDS315_homework7"
+author: "Henry Blake - hrb987"
+date: "2025-04-09"
+output:
+  pdf_document:
+    toc: True
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      eval = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.align = "center")
+
+library(readr)
+library(ggplot2)
+library(tidyverse)
+library(rvest)
+library(mosaic)
+library(MatchIt)
+
+creatine <- read_csv('creatinine.csv')
+covid <- read_csv('covid.csv')
+milk <- read_csv('milk.csv')
+```
+
+# Problem 1 - Regression Warm Up
+
+## Part A - 55 Year Old
+
+```{r}
+creat_mdl <- lm(creatclear ~ age, data = creatine)
+coef(creat_mdl)
+147.813 -.620 * 55
+```
+
+We should expect a creatine clearance of 113.713 mL/minute. I determined this number by fitting a linear model of age vs creatine clearance to the data, then plugged in an age of 55 to get the expected value.
+
+## Part B - Change With Age
+
+According to the linear model, creatine clearance is expected to drop by .620 mL/minute per year of age. This number comes from the slope of the linear model. Since the model graphs age vs creatine clearance, the slope will be change in creatine clearance per year of age.
+
+## Part C - Residuals
+
+```{r} 
+135 - (147.813 - .620 * 40)
+
+112 - (147.813 - .620 * 60)
+```
+
+The 40 year old has a healthier creatine clearance rate because it is 11.987 mL/minute above expected for their age vs the 60 year old who has a creatine clearance of 1.387 mL/minute higher than average.
+
+# Problem 2 - Modeling Disease Growth
+
+## Part 1 - Italy Growth and Double
+
+```{r}
+italy_lm <- lm(log(deaths[country == 'Italy']) ~ days_since_first_death[country == 'Italy'], data = covid)
+italy_gr <- coef(italy_lm)['days_since_first_death[country == "Italy"]']
+
+italy_bs <- do(10000) * lm(log(deaths[country == 'Italy']) ~ days_since_first_death[country == 'Italy'], data = resample(covid))
+italy_ci <- confint(italy_bs$days_since_first_death.country.....Italy.., level = .95)
+
+italy_dr <- 70/(italy_gr*100)
+italy_dr_ci <- confint(70/(italy_bs$days_since_first_death.country.....Italy.. * 100), level = .95)
+
+print(italy_gr)
+print(italy_dr)
+print(italy_ci)
+print(italy_dr_ci)
+```
+
+According to the data, Italy has an estimated growth rate of .183 with a 95% confidence interval of (.159, .208) and an estimated doubling time of 3.8 days with a 95% confidence interval of (3.4, 4.4)
+
+## Part 2 - Spain Growth and Double
+
+```{r}
+spain_lm <- lm(log(deaths[country == 'Spain']) ~ days_since_first_death[country == 'Spain'], data = covid)
+spain_gr <- coef(spain_lm)['days_since_first_death[country == "Spain"]']
+
+spain_bs <- do(10000) * lm(log(deaths[country == 'Spain']) ~ days_since_first_death[country == 'Spain'], data = resample(covid))
+spain_ci <- confint(spain_bs$days_since_first_death.country.....Spain.., level = .95)
+
+spain_dr <- 70/(spain_gr*100)
+spain_dr_ci <- confint(70/(spain_bs$days_since_first_death.country.....Spain.. * 100), level = .95)
+
+print(spain_gr)
+print(spain_dr)
+print(spain_ci)
+print(spain_dr_ci)
+```
+
+According to the data, Spain has an estimated growth rate of .276 with a 95% confidence interval of (.234, .318) and an estimated doubling time of 2.5 days with a 95% confidence interval of (2.2, 3.0)
+
+## Part 3 - Graph
+
+```{r}
+covid |>
+  ggplot() + geom_line(aes(x = days_since_first_death, y = deaths, color = country)) + labs(
+    title = 'Death Rate Over Time for Italy and Spain',
+    x = 'Days Since First Reported Death',
+    y = 'Deaths per Day'
+  )
+```
+
+# Problem 3 - Price Elasticity of Demand
+
+```{r}
+milk_lm <- lm(log(sales) ~ log(price), data = milk)
+milk_el <- coef(milk_lm)['log(price)']
+
+milk_bs <- do(10000) * lm(log(sales) ~ log(price), data = resample(milk))
+milk_ci <- confint(milk_bs$log.price., level = .95)
+
+print(milk_el)
+print(milk_ci)
+```
+
+The estimated price elasticity of the demand of milk is -1.619 with a 95% confidence interval of (-1.778, -1.459). I determined these values by setting up a power function to model the data, took the log of both sides to turn it into a linear model, then bootstrapped a linear regression function to create a confidence interval off of the resulting coeffecients.
